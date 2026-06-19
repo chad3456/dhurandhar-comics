@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quizzy — Board Games &amp; Party Games</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+  <style> html, body { background:#0d1117; } </style>
+</head>
+<body>
+  <div id="app"></div>
+
+  <script src="js/board-data.js"></script>
+  <script src="js/game-engine.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    const game = new MonopolyGame();
+    const ui = new QuizzyUI(game);
+    ui.init();
+  </script>
+</body>
+</html>
