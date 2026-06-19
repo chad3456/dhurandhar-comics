@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Profanity Muter</title>
+  <style>
+    :root {
+      --bg: #0f1419;
+      --panel: #1e293b;
+      --panel2: #273449;
+      --accent: #e53e3e;
+      --accent2: #f6ad55;
+      --green: #48bb78;
+      --text: #e2e8f0;
+      --muted: #94a3b8;
+      --border: #334155;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      width: 340px;
+      font-family: 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      font-size: 14px;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #e53e3e, #c53030);
+      padding: 16px 18px 14px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .header-icon { font-size: 26px; }
+    .header-title { font-size: 18px; font-weight: 800; letter-spacing: 0.02em; }
+    .header-sub { font-size: 11px; opacity: 0.85; margin-top: 2px; }
+
+    .section { padding: 14px 18px; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; }
+
+    /* Master toggle */
+    .master-row {
+      display: flex; align-items: center; justify-content: space-between;
+    }
+    .master-label { font-size: 15px; font-weight: 700; }
+    .master-sub { font-size: 11px; color: var(--muted); margin-top: 2px; }
+
+    /* Toggle switch */
+    .toggle-wrap { display: flex; align-items: center; gap: 8px; }
+    .toggle {
+      position: relative; width: 44px; height: 24px; cursor: pointer;
+    }
+    .toggle input { opacity: 0; width: 0; height: 0; position: absolute; }
+    .slider {
+      position: absolute; inset: 0; border-radius: 24px;
+      background: var(--border); transition: background 0.2s;
+    }
+    .slider::before {
+      content: ''; position: absolute;
+      width: 18px; height: 18px; border-radius: 50%;
+      background: #fff; left: 3px; bottom: 3px;
+      transition: transform 0.2s;
+      box-shadow: 0 1px 4px rgba(0,0,0,0.5);
+    }
+    input:checked + .slider { background: var(--green); }
+    input:checked + .slider::before { transform: translateX(20px); }
+
+    /* Stats */
+    .stats { display: flex; gap: 10px; margin-top: 12px; }
+    .stat-box {
+      flex: 1; background: var(--panel); border-radius: 8px;
+      padding: 10px 12px; border: 1px solid var(--border);
+    }
+    .stat-num { font-size: 22px; font-weight: 800; color: var(--accent); }
+    .stat-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.08em; }
+    .stat-total .stat-num { color: var(--accent2); }
+
+    /* Platform indicator */
+    .platform-badge {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: var(--panel2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 4px 10px; font-size: 11px; font-weight: 600;
+      margin-top: 10px;
+    }
+    .platform-dot { width: 7px; height: 7px; border-radius: 50%; background: var(--green); }
+    .platform-dot.inactive { background: var(--muted); }
+
+    /* Language toggles */
+    .section-title { font-size: 12px; font-weight: 700; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; margin-bottom: 10px; }
+    .lang-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .lang-row {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; padding: 7px 10px;
+    }
+    .lang-name { font-size: 12px; font-weight: 600; }
+    .lang-toggle { transform: scale(0.85); }
+
+    /* Last muted */
+    .last-muted-title { font-size: 11px; color: var(--muted); margin-bottom: 6px; }
+    .muted-words { display: flex; flex-wrap: wrap; gap: 5px; min-height: 24px; }
+    .muted-word {
+      background: rgba(229,62,62,0.15); border: 1px solid rgba(229,62,62,0.3);
+      border-radius: 12px; padding: 2px 10px; font-size: 11px; color: var(--accent);
+      font-weight: 600; filter: blur(4px); transition: filter 0.2s; cursor: pointer;
+    }
+    .muted-word:hover { filter: none; }
+    .muted-word-hint { font-size: 10px; color: var(--muted); font-style: italic; }
+
+    /* Sensitivity */
+    .sensitivity-row { display: flex; gap: 6px; margin-top: 4px; }
+    .sens-btn {
+      flex: 1; padding: 7px 6px; border-radius: 8px; border: 1px solid var(--border);
+      background: var(--panel); color: var(--muted); font-size: 11px; font-weight: 600;
+      cursor: pointer; text-align: center; transition: all 0.15s;
+    }
+    .sens-btn.active { background: var(--accent); border-color: var(--accent); color: #fff; }
+
+    /* Supported platforms */
+    .platform-list { display: flex; flex-wrap: wrap; gap: 5px; margin-top: 6px; }
+    .plat-tag {
+      font-size: 10px; padding: 2px 8px; border-radius: 10px;
+      background: var(--panel); border: 1px solid var(--border); color: var(--muted);
+    }
+    .plat-tag.active { border-color: var(--green); color: var(--green); }
+
+    /* Footer */
+    .footer {
+      padding: 10px 18px; text-align: center; font-size: 10px; color: var(--muted);
+      border-top: 1px solid var(--border);
+    }
+    .reset-btn {
+      font-size: 10px; color: var(--muted); background: none; border: none; cursor: pointer;
+      text-decoration: underline; margin-top: 3px;
+    }
+    .reset-btn:hover { color: var(--accent); }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <div class="header-icon">🔇</div>
+    <div>
+      <div class="header-title">Profanity Muter</div>
+      <div class="header-sub">Auto-mutes cuss words on streaming platforms</div>
+    </div>
+  </div>
+
+  <!-- Master toggle -->
+  <div class="section">
+    <div class="master-row">
+      <div>
+        <div class="master-label" id="statusText">Protection: ON</div>
+        <div class="master-sub">Muting Hindi, English &amp; slang cuss words</div>
+      </div>
+      <label class="toggle">
+        <input type="checkbox" id="masterToggle" checked />
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <div class="stats">
+      <div class="stat-box">
+        <div class="stat-num" id="sessionCount">0</div>
+        <div class="stat-label">Muted this session</div>
+      </div>
+      <div class="stat-box stat-total">
+        <div class="stat-num" id="totalCount">0</div>
+        <div class="stat-label">Total all-time</div>
+      </div>
+    </div>
+
+    <div id="platformBadge" class="platform-badge">
+      <div class="platform-dot inactive" id="platformDot"></div>
+      <span id="platformName">Detecting platform…</span>
+    </div>
+  </div>
+
+  <!-- Sensitivity -->
+  <div class="section">
+    <div class="section-title">Sensitivity</div>
+    <div class="sensitivity-row">
+      <div class="sens-btn active" data-sens="all">All Words</div>
+      <div class="sens-btn" data-sens="moderate">Moderate+</div>
+      <div class="sens-btn" data-sens="severe">Severe Only</div>
+    </div>
+  </div>
+
+  <!-- Language toggles -->
+  <div class="section">
+    <div class="section-title">Languages</div>
+    <div class="lang-grid">
+      <div class="lang-row">
+        <span class="lang-name">🇬🇧 English</span>
+        <label class="toggle lang-toggle"><input type="checkbox" data-lang="english" checked /><span class="slider"></span></label>
+      </div>
+      <div class="lang-row">
+        <span class="lang-name">🇮🇳 Hindi</span>
+        <label class="toggle lang-toggle"><input type="checkbox" data-lang="hindi" checked /><span class="slider"></span></label>
+      </div>
+      <div class="lang-row">
+        <span class="lang-name">🌀 Hinglish</span>
+        <label class="toggle lang-toggle"><input type="checkbox" data-lang="hinglish" checked /><span class="slider"></span></label>
+      </div>
+      <div class="lang-row">
+        <span class="lang-name">🥁 Punjabi</span>
+        <label class="toggle lang-toggle"><input type="checkbox" data-lang="punjabi" checked /><span class="slider"></span></label>
+      </div>
+      <div class="lang-row">
+        <span class="lang-name">🌶 Telugu</span>
+        <label class="toggle lang-toggle"><input type="checkbox" data-lang="telugu" checked /><span class="slider"></span></label>
+      </div>
+      <div class="lang-row">
+        <span class="lang-name">💬 Internet</span>
+        <label class="toggle lang-toggle"><input type="checkbox" data-lang="internet_slang" checked /><span class="slider"></span></label>
+      </div>
+    </div>
+  </div>
+
+  <!-- Recently muted -->
+  <div class="section">
+    <div class="last-muted-title">Recently muted words <span style="font-size:9px">(hover to reveal)</span></div>
+    <div class="muted-words" id="mutedWords">
+      <span class="muted-word-hint">No words muted yet this session.</span>
+    </div>
+  </div>
+
+  <!-- Supported platforms -->
+  <div class="section">
+    <div class="section-title">Works On</div>
+    <div class="platform-list">
+      <span class="plat-tag active" id="tag-netflix">Netflix</span>
+      <span class="plat-tag active" id="tag-youtube">YouTube</span>
+      <span class="plat-tag active" id="tag-prime">Prime Video</span>
+      <span class="plat-tag active" id="tag-hotstar">Hotstar</span>
+      <span class="plat-tag active" id="tag-disney">Disney+</span>
+      <span class="plat-tag active" id="tag-hulu">Hulu</span>
+      <span class="plat-tag active" id="tag-zee5">Zee5</span>
+      <span class="plat-tag active" id="tag-sonyliv">SonyLIV</span>
+      <span class="plat-tag active" id="tag-mxplayer">MX Player</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    Subtitles must be enabled on the platform for muting to work.
+    <br/>
+    <button class="reset-btn" id="resetBtn">Reset all-time count</button>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

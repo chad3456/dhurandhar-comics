@@ -1,0 +1,84 @@
+{
+  "manifest_version": 3,
+  "name": "Profanity Muter — Netflix & Streaming",
+  "version": "1.0.0",
+  "description": "Auto-mutes cuss words (Hindi, English, Hinglish, Punjabi, slang) while streaming Netflix, YouTube, Prime Video, Hotstar, and more.",
+
+  "permissions": [
+    "storage",
+    "tabs",
+    "activeTab"
+  ],
+
+  "host_permissions": [
+    "https://www.netflix.com/*",
+    "https://www.youtube.com/*",
+    "https://www.primevideo.com/*",
+    "https://www.amazon.com/video/*",
+    "https://www.hotstar.com/*",
+    "https://www.jiocinema.com/*",
+    "https://www.disneyplus.com/*",
+    "https://www.hulu.com/*",
+    "https://www.max.com/*",
+    "https://www.hbomax.com/*",
+    "https://tv.apple.com/*",
+    "https://www.sonyliv.com/*",
+    "https://www.zee5.com/*",
+    "https://www.mxplayer.in/*",
+    "https://www.voot.com/*"
+  ],
+
+  "background": {
+    "service_worker": "background.js"
+  },
+
+  "action": {
+    "default_popup": "popup.html",
+    "default_icon": {
+      "16": "icons/icon16.png",
+      "32": "icons/icon32.png",
+      "48": "icons/icon48.png",
+      "128": "icons/icon128.png"
+    },
+    "default_title": "Profanity Muter"
+  },
+
+  "icons": {
+    "16": "icons/icon16.png",
+    "32": "icons/icon32.png",
+    "48": "icons/icon48.png",
+    "128": "icons/icon128.png"
+  },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "https://www.netflix.com/*",
+        "https://www.youtube.com/*",
+        "https://www.primevideo.com/*",
+        "https://www.amazon.com/video/*",
+        "https://www.hotstar.com/*",
+        "https://www.jiocinema.com/*",
+        "https://www.disneyplus.com/*",
+        "https://www.hulu.com/*",
+        "https://www.max.com/*",
+        "https://www.hbomax.com/*",
+        "https://tv.apple.com/*",
+        "https://www.sonyliv.com/*",
+        "https://www.zee5.com/*",
+        "https://www.mxplayer.in/*",
+        "https://www.voot.com/*"
+      ],
+      "js": ["words.js", "content.js"],
+      "run_at": "document_start",
+      "all_frames": false
+    }
+  ],
+
+  "web_accessible_resources": [
+    {
+      "resources": ["words.js"],
+      "matches": ["<all_urls>"]
+    }
+  ]
+}
