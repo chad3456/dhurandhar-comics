@@ -1,0 +1,251 @@
+/* ============================================================
+   SHASHN - Political Board Game Styles
+   ============================================================ */
+:root {
+  --bg: #0f1419;
+  --bg2: #1a2332;
+  --panel: #1e293b;
+  --panel2: #273449;
+  --accent: #f6ad55;
+  --accent2: #fc8181;
+  --text: #e2e8f0;
+  --muted: #94a3b8;
+  --border: #334155;
+  --ideology: #4299e1;
+  --resource: #48bb78;
+  --voter: #ed8936;
+  --conspiracy: #9f7aea;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  font-family: 'Segoe UI', Roboto, -apple-system, sans-serif;
+  background: linear-gradient(160deg, var(--bg) 0%, var(--bg2) 100%);
+  color: var(--text);
+  min-height: 100vh;
+  line-height: 1.5;
+}
+
+#app { max-width: 1400px; margin: 0 auto; padding: 1rem; }
+
+.screen { animation: fadeIn 0.4s ease; }
+@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
+
+/* ── LOBBY ── */
+.hero { text-align: center; padding: 2rem 1rem 1rem; }
+.logo {
+  font-size: clamp(3rem, 10vw, 6rem);
+  font-weight: 900;
+  letter-spacing: 0.15em;
+  background: linear-gradient(135deg, var(--accent), var(--accent2));
+  -webkit-background-clip: text; background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 0 40px rgba(246,173,85,0.2);
+}
+.tagline { font-size: 1.3rem; color: var(--accent); font-weight: 600; margin-bottom: 0.8rem; }
+.subtitle { color: var(--muted); max-width: 700px; margin: 0 auto; }
+
+.deck-stats { display: flex; flex-wrap: wrap; gap: 0.6rem; justify-content: center; margin: 1.5rem 0; }
+.stat-pill {
+  background: var(--panel); border: 1px solid var(--border);
+  padding: 0.5rem 1rem; border-radius: 20px; font-size: 0.9rem; font-weight: 600;
+}
+
+.lobby-panel, .rules-summary {
+  background: var(--panel); border: 1px solid var(--border);
+  border-radius: 16px; padding: 1.5rem; margin: 1rem auto; max-width: 700px;
+}
+.lobby-panel h2 { margin-bottom: 1rem; color: var(--accent); }
+
+.player-list { display: flex; flex-wrap: wrap; gap: 0.6rem; margin-bottom: 1rem; min-height: 2rem; }
+.player-chip {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.5rem 1rem; border-radius: 24px; font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.3);
+}
+.chip-remove {
+  background: rgba(0,0,0,0.25); border: none; color: inherit;
+  border-radius: 50%; width: 20px; height: 20px; cursor: pointer; font-size: 0.7rem;
+}
+
+.add-player-form { display: flex; gap: 1rem; align-items: center; flex-wrap: wrap; margin-bottom: 0.5rem; }
+#playerName {
+  flex: 1; min-width: 200px; padding: 0.7rem 1rem; border-radius: 10px;
+  border: 1px solid var(--border); background: var(--bg2); color: var(--text); font-size: 1rem;
+}
+.color-picker { display: flex; gap: 0.5rem; }
+.color-swatch {
+  width: 38px; height: 38px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.2);
+  cursor: pointer; transition: transform 0.15s, border-color 0.15s;
+}
+.color-swatch:hover { transform: scale(1.15); border-color: #fff; }
+.hint, .muted { color: var(--muted); font-size: 0.85rem; }
+
+.lobby-actions { display: flex; gap: 1rem; margin-top: 1.5rem; flex-wrap: wrap; }
+
+.btn {
+  padding: 0.75rem 1.5rem; border-radius: 10px; border: none; cursor: pointer;
+  font-size: 1rem; font-weight: 700; transition: transform 0.1s, box-shadow 0.2s;
+}
+.btn:hover { transform: translateY(-2px); box-shadow: 0 4px 16px rgba(0,0,0,0.3); }
+.btn-primary { background: linear-gradient(135deg, var(--accent), #ed8936); color: #1a202c; }
+.btn-secondary { background: var(--panel2); color: var(--text); border: 1px solid var(--border); }
+.btn-small { padding: 0.4rem 0.9rem; font-size: 0.85rem; }
+.btn.disabled, .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.btn.disabled:hover, .btn:disabled:hover { transform: none; box-shadow: none; }
+
+.rules-summary h3 { color: var(--accent); margin-bottom: 0.8rem; }
+.rules-summary ol { padding-left: 1.4rem; }
+.rules-summary li { margin-bottom: 0.5rem; color: var(--muted); }
+.rules-summary strong { color: var(--text); }
+
+/* ── VOTE ── */
+.vote-screen { text-align: center; padding: 2rem 1rem; }
+.vote-screen h2 { font-size: 2rem; margin-bottom: 0.5rem; }
+.vote-card {
+  background: var(--panel); border: 2px solid; border-radius: 16px;
+  padding: 2rem; max-width: 600px; margin: 2rem auto;
+}
+.vote-options { display: flex; flex-wrap: wrap; gap: 1rem; justify-content: center; margin-top: 1.5rem; }
+.vote-btn { min-width: 140px; }
+.vote-progress { color: var(--muted); margin-top: 1rem; }
+
+/* ── RESOURCES ── */
+.resource-screen { padding: 1.5rem 0.5rem; }
+.resource-screen h2 { text-align: center; font-size: 1.8rem; }
+.current-picker {
+  background: var(--panel); border: 2px solid; border-radius: 12px;
+  padding: 1rem 1.5rem; max-width: 500px; margin: 1rem auto; text-align: center;
+}
+.card-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 1rem; margin: 1.5rem 0;
+}
+.picked-so-far { background: var(--panel); border-radius: 12px; padding: 1rem 1.5rem; }
+.mini-cards { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-top: 0.5rem; }
+.mini-card { padding: 0.3rem 0.7rem; border-radius: 6px; font-size: 0.8rem; background: var(--panel2); }
+
+/* ── CARDS ── */
+.game-card {
+  background: linear-gradient(165deg, var(--panel2), var(--panel));
+  border: 1px solid var(--border); border-left: 5px solid var(--border);
+  border-radius: 12px; padding: 0.9rem; font-size: 0.85rem;
+  display: flex; flex-direction: column; gap: 0.35rem;
+  transition: transform 0.15s, box-shadow 0.2s; position: relative; overflow: hidden;
+}
+.game-card.playable, .game-card.pickable { cursor: pointer; }
+.game-card.playable:hover, .game-card.pickable:hover {
+  transform: translateY(-6px) scale(1.02); box-shadow: 0 10px 30px rgba(0,0,0,0.5); z-index: 5;
+}
+.card-cat { font-size: 0.65rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); font-weight: 700; }
+.card-title { font-size: 1rem; font-weight: 800; color: var(--text); }
+.card-desc { color: var(--muted); font-size: 0.78rem; }
+.card-effect { font-size: 0.75rem; color: var(--accent); font-weight: 600; }
+.card-foot { font-size: 0.7rem; color: var(--muted); margin-top: auto; }
+.card-power, .card-meta { font-size: 0.75rem; color: var(--accent); font-weight: 700; }
+.card-stance {
+  display: inline-block; font-size: 0.65rem; padding: 0.1rem 0.5rem; border-radius: 10px;
+  background: rgba(255,255,255,0.08); width: fit-content; text-transform: capitalize;
+}
+.stance-progressive { color: #63b3ed; } .stance-conservative { color: #fc8181; }
+.stance-moderate { color: #f6e05e; } .stance-bipartisan { color: #68d391; }
+.stance-farright { color: #f56565; }
+
+/* category accent colors */
+.cat-healthcare, .cat-media { border-left-color: var(--resource); }
+.cat-funding, .cat-economy { border-left-color: #48bb78; }
+.cat-groundgame { border-left-color: #38b2ac; }
+.cat-endorsements { border-left-color: #4299e1; }
+.cat-voterbloc, .cat-voter { border-left-color: var(--voter); }
+.cat-conspiracy { border-left-color: var(--conspiracy); }
+.cat-education, .cat-environment, .cat-immigration, .cat-defense,
+.cat-socialjustice, .cat-housing, .cat-technology, .cat-foreignpolicy,
+.cat-criminaljust, .cat-religionval { border-left-color: var(--ideology); }
+
+/* ── GAMEPLAY ── */
+.game-header {
+  display: flex; justify-content: space-between; align-items: center;
+  flex-wrap: wrap; gap: 0.8rem; padding: 0.8rem 1rem; background: var(--panel);
+  border-radius: 12px; margin-bottom: 1rem;
+}
+.round-info { display: flex; gap: 0.8rem; flex-wrap: wrap; }
+.round-badge { background: var(--accent); color: #1a202c; padding: 0.4rem 0.9rem; border-radius: 8px; font-weight: 800; }
+.phase-badge { background: var(--panel2); padding: 0.4rem 0.9rem; border-radius: 8px; font-size: 0.85rem; }
+.turn-indicator { padding: 0.5rem 1.2rem; border-radius: 10px; font-weight: 800; font-size: 1.1rem; }
+
+.game-body { display: grid; grid-template-columns: 1fr 1.4fr 1fr; gap: 1rem; }
+@media (max-width: 1100px) { .game-body { grid-template-columns: 1fr; } }
+
+.players-column { display: flex; flex-direction: column; gap: 0.8rem; }
+
+.player-mat {
+  background: var(--panel); border: 2px solid; border-radius: 12px; overflow: hidden;
+  transition: box-shadow 0.3s;
+}
+.active-mat { box-shadow: 0 0 0 3px var(--accent), 0 8px 24px rgba(0,0,0,0.4); }
+.mat-header { display: flex; justify-content: space-between; padding: 0.5rem 0.9rem; font-weight: 800; }
+.mat-body { padding: 0.7rem 0.9rem; }
+.peg-regions { display: flex; flex-direction: column; gap: 0.3rem; margin-bottom: 0.6rem; }
+.region-row { display: flex; align-items: center; gap: 0.5rem; }
+.region-name { font-size: 0.72rem; color: var(--muted); width: 75px; }
+.pegs { display: flex; gap: 2px; align-items: center; flex-wrap: wrap; }
+.peg { width: 11px; height: 11px; border-radius: 50%; display: inline-block; box-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+.peg-empty { color: var(--border); font-size: 0.8rem; }
+.peg-overflow { font-size: 0.7rem; color: var(--accent); font-weight: 700; }
+.mat-stats { display: flex; gap: 0.7rem; flex-wrap: wrap; font-size: 0.8rem; color: var(--muted); margin-bottom: 0.5rem; }
+.win-bar { height: 6px; background: var(--bg); border-radius: 3px; overflow: hidden; }
+.win-fill { height: 100%; transition: width 0.5s; }
+
+.action-panel { background: var(--panel); border-radius: 12px; padding: 1rem; margin-bottom: 1rem; }
+.action-panel h3 { color: var(--accent); margin-bottom: 0.8rem; }
+.action-group { margin-bottom: 0.9rem; }
+.action-group label { display: block; font-size: 0.85rem; color: var(--muted); margin-bottom: 0.4rem; font-weight: 600; }
+.region-buttons, .target-buttons { display: flex; flex-wrap: wrap; gap: 0.4rem; }
+.btn-action { background: var(--panel2); color: var(--text); padding: 0.45rem 0.8rem; font-size: 0.8rem; border: 1px solid var(--border); }
+.btn-action:hover { background: var(--accent); color: #1a202c; }
+.btn-end { width: 100%; margin-top: 0.5rem; }
+
+.hand-area h4 { margin-bottom: 0.6rem; color: var(--accent); }
+.hand-cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 0.7rem; }
+
+.log-column { background: var(--panel); border-radius: 12px; padding: 1rem; max-height: 80vh; }
+.log-column h4 { color: var(--accent); margin-bottom: 0.6rem; }
+.log-feed { display: flex; flex-direction: column; gap: 0.35rem; overflow-y: auto; max-height: 75vh; }
+.log-entry { font-size: 0.78rem; padding: 0.4rem 0.6rem; border-radius: 6px; background: var(--bg2); border-left: 3px solid var(--border); }
+.log-system, .log-win { border-left-color: var(--accent); color: var(--accent); font-weight: 600; }
+.log-conspiracy { border-left-color: var(--conspiracy); }
+.log-voter { border-left-color: var(--voter); }
+.log-ideology { border-left-color: var(--ideology); }
+.log-resource, .log-action { border-left-color: var(--resource); }
+.log-debate { border-left-color: var(--accent2); }
+
+.sim-banner { background: var(--panel); border-radius: 12px; padding: 1.5rem; text-align: center; font-size: 1.2rem; color: var(--accent); font-weight: 700; margin-bottom: 1rem; }
+
+/* ── ELECTION / GAMEOVER ── */
+.election-screen, .gameover-screen { text-align: center; padding: 3rem 1rem; }
+.election-title { font-size: 3rem; color: var(--accent); animation: pulse 1s infinite; }
+@keyframes pulse { 50% { opacity: 0.6; } }
+.counting, .final-board { max-width: 500px; margin: 2rem auto; }
+.count-row, .final-row {
+  display: flex; justify-content: space-between; align-items: center;
+  background: var(--panel); border-left: 4px solid; border-radius: 8px;
+  padding: 0.8rem 1.2rem; margin-bottom: 0.6rem;
+}
+.gameover-screen h1 { font-size: 2.5rem; color: var(--accent); margin: 0.5rem 0; }
+.confetti { font-size: 4rem; animation: bounce 1s infinite; }
+@keyframes bounce { 50% { transform: translateY(-15px); } }
+.final-row { gap: 0.8rem; flex-wrap: wrap; }
+.winner-row { box-shadow: 0 0 0 2px var(--accent); }
+.rank { font-weight: 800; color: var(--accent); }
+.fname { font-weight: 700; flex: 1; text-align: left; }
+.fstats { font-size: 0.78rem; color: var(--muted); width: 100%; }
+.gameover-screen .btn { margin-top: 1.5rem; }
+
+/* ── TOAST ── */
+.toast {
+  position: fixed; bottom: 2rem; left: 50%; transform: translateX(-50%) translateY(100px);
+  background: var(--accent2); color: #1a202c; padding: 0.8rem 1.5rem; border-radius: 10px;
+  font-weight: 700; box-shadow: 0 8px 30px rgba(0,0,0,0.5); opacity: 0; transition: all 0.3s; z-index: 1000;
+}
+.toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
