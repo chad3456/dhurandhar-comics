@@ -21,8 +21,11 @@
   let enabled = true;
   let subtitleObserver = null;
   let videoObserver = null;
-  const MUTE_PADDING_MS = 100; // extra ms of silence after subtitle ends
+  const MUTE_PADDING_MS = 120;   // extra ms of silence after subtitle ends
   const SUBTITLE_PERSIST_MS = 2000; // how long to hold mute if subtitle doesn't change
+  const PRE_ROLL_MS = 250;       // start muting THIS many ms BEFORE a flagged cue
+                                  // (subtitles render ~at speech; audio can lead
+                                  //  the caption slightly, so we mute early)
 
   // ── PLATFORM DETECTION ───────────────────────────────────
   const PLATFORM = detectPlatform();
@@ -164,20 +167,25 @@
   function muteAudio(video) {
     if (!video) return;
     if (gainNode) {
-      gainNode.gain.setTargetAtTime(0, audioCtx.currentTime, 0.01);
-    } else {
-      video.muted = true;
+      // INSTANT cut — no ramp. A ramp let the first syllable leak.
+      const t = audioCtx.currentTime;
+      gainNode.gain.cancelScheduledValues(t);
+      gainNode.gain.setValueAtTime(0, t);
     }
+    // Always also set .muted as a hard guarantee (covers EME/DRM audio
+    // on Netflix/Prime where Web Audio routing is blocked).
+    video.muted = true;
     isMuted = true;
   }
 
   function unmuteAudio(video) {
     if (!video) return;
     if (gainNode) {
-      gainNode.gain.setTargetAtTime(1, audioCtx.currentTime, 0.02);
-    } else {
-      video.muted = false;
+      const t = audioCtx.currentTime;
+      gainNode.gain.cancelScheduledValues(t);
+      gainNode.gain.setValueAtTime(1, t);
     }
+    video.muted = false;
     isMuted = false;
   }
 
@@ -261,35 +269,78 @@
     bodyObserver.observe(document.body, { childList: true, subtree: true });
   }
 
-  // ── NATIVE TRACK CUE INTERCEPT (look-ahead) ──────────────
-  // For platforms that use native <track> elements, we can read
-  // TextTrack cue events and mute slightly before speech.
+  // ── NATIVE TRACK LOOK-AHEAD SCHEDULER ────────────────────
+  // For platforms exposing native TextTrack cues, we read the FULL
+  // cue list (each cue has startTime/endTime) and pre-compute a
+  // mute schedule. A polling loop then mutes PRE_ROLL_MS *before*
+  // each flagged cue — so profanity is silenced proactively, not
+  // reactively. This is what stops the first syllable leaking.
+  let nativeSchedule = [];     // [{ start, end, word }]
+  let nativeInterval = null;
+
+  function rebuildNativeSchedule(video) {
+    nativeSchedule = [];
+    if (!video || !video.textTracks) return;
+    for (let i = 0; i < video.textTracks.length; i++) {
+      const track = video.textTracks[i];
+      // Force the track into "hidden" so the browser populates .cues
+      // without drawing its own captions over the platform's.
+      if (track.mode === 'disabled') track.mode = 'hidden';
+      const cues = track.cues;
+      if (!cues) continue;
+      for (let j = 0; j < cues.length; j++) {
+        const cue = cues[j];
+        const cleaned = (cue.text || '').replace(/<[^>]+>/g, '').trim();
+        const check = containsProfanity(cleaned);
+        if (check.found) {
+          nativeSchedule.push({
+            start: cue.startTime - PRE_ROLL_MS / 1000,
+            end:   cue.endTime   + MUTE_PADDING_MS / 1000,
+            word:  check.word,
+          });
+        }
+      }
+    }
+    nativeSchedule.sort((a, b) => a.start - b.start);
+    if (nativeSchedule.length) startNativePolling(video);
+  }
+
+  function startNativePolling(video) {
+    if (nativeInterval) return;
+    nativeInterval = setInterval(() => {
+      if (!enabled || !video) return;
+      const t = video.currentTime;
+      let shouldMute = false, hitWord = null;
+      for (const e of nativeSchedule) {
+        if (t >= e.start && t <= e.end) { shouldMute = true; hitWord = e.word; break; }
+        if (e.start > t) break; // schedule is sorted; nothing further is active
+      }
+      if (shouldMute && !isMuted) {
+        muteAudio(video);
+        muteCount++;
+        notifyBackground({ type: 'MUTED', word: hitWord, count: muteCount });
+      } else if (!shouldMute && isMuted) {
+        unmuteAudio(video);
+      }
+    }, 60); // 60ms granularity ≈ catches the word edge tightly
+  }
+
   function hookNativeTextTracks(video) {
     if (!video || !video.textTracks) return;
-
-    const hookTrack = (track) => {
-      track.oncuechange = () => {
-        const activeCues = track.activeCues;
-        if (!activeCues || activeCues.length === 0) {
-          scheduledUnmute(video, MUTE_PADDING_MS);
-          return;
-        }
-        for (let i = 0; i < activeCues.length; i++) {
-          const cueText = activeCues[i].text || '';
-          // Strip VTT tags like <c.colorCCCC00> etc.
-          const cleaned = cueText.replace(/<[^>]+>/g, '').trim();
-          handleSubtitleText(cleaned, video);
-        }
-      };
-    };
-
-    for (let i = 0; i < video.textTracks.length; i++) {
-      hookTrack(video.textTracks[i]);
-    }
-
+    // Build now (cues may already be loaded) ...
+    rebuildNativeSchedule(video);
+    // ... and rebuild whenever a new track/cue set arrives or user
+    // switches subtitle language.
     video.textTracks.onaddtrack = (e) => {
-      if (e.track) hookTrack(e.track);
+      if (e.track) {
+        e.track.mode = 'hidden';
+        e.track.addEventListener('cuechange', () => rebuildNativeSchedule(video), { once: true });
+      }
+      setTimeout(() => rebuildNativeSchedule(video), 800);
     };
+    video.textTracks.onchange = () => setTimeout(() => rebuildNativeSchedule(video), 300);
+    // Periodic rebuild in case cues stream in lazily (HLS/DASH sidecar)
+    setInterval(() => rebuildNativeSchedule(video), 5000);
   }
 
   // ── VIDEO WATCHER ─────────────────────────────────────────
@@ -354,7 +405,11 @@
           cueText = cueText.replace(/<[^>]+>/g, '').trim();
           const check = containsProfanity(cueText);
           if (check.found) {
-            muteSchedule.push({ start, end: end + MUTE_PADDING_MS / 1000, word: check.word });
+            muteSchedule.push({
+              start: start - PRE_ROLL_MS / 1000,
+              end: end + MUTE_PADDING_MS / 1000,
+              word: check.word,
+            });
           }
         }
         i++;

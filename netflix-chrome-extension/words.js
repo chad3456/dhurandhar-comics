@@ -279,62 +279,147 @@ function buildProfanityEngine() {
 
   // Common censored/obfuscated variants
   const obfuscated = [
-    /f[u\*@]c?k+/i,
-    /sh[i1!]t+/i,
-    /b[i1!]tc?h/i,
-    /a[s\$][s\$]+/i,
-    /c[o0]c?k/i,
-    /d[i1!]c?k/i,
-    /p[u\*]s+y/i,
-    /cu[n\*]t/i,
-    /wh[o0]re?/i,
+    /\bf[u\*@]c?k+/i,
+    /\bsh[i1!]t+\b/i,
+    /\bb[i1!]tc?h/i,
+    /\ba[s\$][s\$]+(hole|wipe|hat)?\b/i,
+    /\bc[o0]ck(sucker|head)?\b/i,
+    /\bd[i1!]ck(head|face)?\b/i,
+    /\bp[u\*]s+y\b/i,
+    /\bcu[n\*]t\b/i,
+    /wh[o0]re/i,
     /n[i1!]gg[ae]/i,
-    /f[ae4]g+[o0t]?/i,
+    /\bf[ae4]g+[o0t]?\b/i,
     /madarc[h]*[o0]d/i,
     /behenc[h]*[o0]d/i,
-    /ch[u\*]t[iy]/i,
-    /rn[d]*i/i,
-    /ga[a]?[n]*[d]+[u]?/i,
+    /ch[u\*]t[iy]a/i,
+    /\bra+nd+i\b/i,
+    /\bga+nd+u?\b/i,
   ];
 
-  return { exactWords, phrases, obfuscated };
+  // ── SEVERE-WORD ROOTS for fuzzy substring matching ──────────
+  // These are the "cores" of the worst slurs. We match them as
+  // substrings on a *phonetically normalized* version of the text,
+  // so spelling variants (madarchod / maderchod / madarchodd /
+  // madar chod / m@d@rchod) all get caught even if the subtitle
+  // spells them differently than our list.
+  const severeRoots = [
+    // Hindi / Hinglish romanized roots (already normalized form)
+    'madarchod', 'mdrchod', 'maderchod', 'matarchod',
+    'behenchod', 'bhenchod', 'banchod', 'bhonchod',
+    'bhosdik', 'bhosadik', 'bhosdi', 'bhosad',
+    'chutiya', 'chutia', 'chutiap', 'chut',
+    'gandu', 'gand', 'gaand',
+    'bhadwa', 'bhadw',
+    'randi', 'rand',
+    'harami', 'haramzad', 'haramjad',
+    'lavda', 'lauda', 'lund', 'lode', 'loda',
+    'kutta', 'kutia', 'kamina', 'kamine',
+    'jhatu', 'jhant',
+    'gashti', 'chinal', 'chhinal',
+    'tatte', 'lundbaz',
+    // Devanagari roots
+    'मादरचोद', 'बहनचोद', 'भोसड़', 'चूतिय', 'चूत', 'गांड', 'गांडू',
+    'भड़व', 'रंडी', 'हराम', 'लंड', 'लोड़', 'कमीन', 'कुत्त', 'झाट',
+    // English severe roots
+    'fuck', 'fuk', 'fck', 'phuck', 'shit', 'cunt', 'bitch',
+    'asshol', 'motherfuck', 'dickhead', 'bastard', 'nigg', 'fagg',
+  ];
+
+  return { exactWords, phrases, obfuscated, severeRoots };
 }
 
 const ENGINE = buildProfanityEngine();
 
 /**
+ * Phonetic normalization for romanized Hindi / English.
+ * Collapses the spelling variation that makes subtitle text differ
+ * from our word list. Order of operations matters.
+ */
+function normalizePhonetic(s) {
+  return s
+    .toLowerCase()
+    // strip everything except letters (latin + devanagari) — removes
+    // spaces, punctuation, leetspeak separators inside a slur
+    .replace(/[^a-zऀ-ॿ]/g, '')
+    // common leetspeak → letters
+    .replace(/0/g, 'o').replace(/1/g, 'i').replace(/3/g, 'e')
+    .replace(/4/g, 'a').replace(/5/g, 's').replace(/7/g, 't')
+    .replace(/@/g, 'a').replace(/\$/g, 's')
+    // collapse repeated letters: "madarchodd" → "madarchod", "fuuck" → "fuck"
+    .replace(/([a-zऀ-ॿ])\1+/g, '$1')
+    // phonetic folding for romanized Hindi vowel/consonant variants
+    .replace(/aa/g, 'a').replace(/ee/g, 'i').replace(/ii/g, 'i')
+    .replace(/oo/g, 'u').replace(/uu/g, 'u')
+    .replace(/ph/g, 'f').replace(/w/g, 'v')
+    .replace(/dh/g, 'd').replace(/th/g, 't').replace(/bh/g, 'b')
+    .replace(/ck/g, 'k').replace(/ch/g, 'c')
+    .replace(/sch/g, 'c');
+}
+
+// Pre-normalize the severe roots once at load time.
+// IMPORTANT: phonetic matching strips spaces/punctuation, so word
+// boundaries are lost. Short roots (rand, gand, chut, lund, ass) would
+// then fire inside innocent words (random, grandeur, shut...). We
+// therefore only allow phonetic SUBSTRING matching for LONG compound
+// slurs (>= 6 normalized chars) — exactly the ones whose spelling
+// actually varies between subtitle and word list. Short slurs are
+// still caught via the exact-token and word-boundaried regex layers.
+const NORMALIZED_ROOTS = ENGINE.severeRoots.map(r => ({
+  raw: r,
+  norm: normalizePhonetic(r),
+})).filter(x => x.norm.length >= 6);
+
+/**
  * Check if a text string contains any profanity.
- * Returns { found: bool, word: string|null }
+ * Returns { found: bool, word: string|null, method: string }
+ *
+ * APPROACH = TEXT-BASED (reads subtitle/caption text).
+ * Matching is layered, fastest & most precise first:
+ *   1. Multi-word phrase match
+ *   2. Exact token match (+ English morphology)
+ *   3. Obfuscation regex (f*ck, sh!t, ch*tiya)
+ *   4. Phonetic-normalized substring match for severe slurs
+ *      → this is what catches madarchod / maderchod / madar-chod /
+ *        madarchodd / m@d@rchod, etc.
  */
 function containsProfanity(text) {
-  if (!text || typeof text !== 'string') return { found: false, word: null };
+  if (!text || typeof text !== 'string') return { found: false, word: null, method: null };
 
   const lower = text.toLowerCase();
 
   // 1. Phrase check (multi-word, longest first)
   for (const phrase of ENGINE.phrases) {
-    if (lower.includes(phrase)) return { found: true, word: phrase };
+    if (lower.includes(phrase)) return { found: true, word: phrase, method: 'phrase' };
   }
 
   // 2. Word boundary check for exact words
-  // Split on whitespace, punctuation, and common separators
   const tokens = lower.split(/[\s\p{P}\p{Z}—–\-,\.!?;:'"()\[\]{}\/\\|<>@#$%^&*+=~`]+/u);
   for (const token of tokens) {
     if (!token) continue;
-    if (ENGINE.exactWords.has(token)) return { found: true, word: token };
-    // Also check without trailing 's', 'ed', 'ing', 'er' for English morphology
+    if (ENGINE.exactWords.has(token)) return { found: true, word: token, method: 'exact' };
     if (ENGINE.exactWords.has(token.replace(/(?:ing|ings|ed|er|ers|s)$/i, ''))) {
-      return { found: true, word: token };
+      return { found: true, word: token, method: 'morphology' };
     }
   }
 
   // 3. Regex / obfuscated check
   for (const pattern of ENGINE.obfuscated) {
     const m = lower.match(pattern);
-    if (m) return { found: true, word: m[0] };
+    if (m) return { found: true, word: m[0], method: 'obfuscated' };
   }
 
-  return { found: false, word: null };
+  // 4. Phonetic-normalized substring match (catches spelling variants)
+  const normText = normalizePhonetic(text);
+  if (normText.length >= 3) {
+    for (const root of NORMALIZED_ROOTS) {
+      if (normText.includes(root.norm)) {
+        return { found: true, word: root.raw, method: 'phonetic' };
+      }
+    }
+  }
+
+  return { found: false, word: null, method: null };
 }
 
 // Export for use in content script (also works as global when injected)

@@ -37,6 +37,23 @@ Auto-mutes cuss words while you stream on **Netflix, YouTube, Prime Video, Hotst
 
 ---
 
+## 🔬 Detection Approach (Text-Based) & Limitations
+
+**The extension is currently TEXT-BASED** — it reads the platform's
+**subtitles/captions**, not the audio waveform. Flagged lines are muted around
+their timestamp. This means:
+
+- ✅ Catches profanity that appears in subtitles, with spelling-variant
+  tolerance (`madarchod` / `maderchod` / `madar chod` / `m@d@rchod` all match)
+- ⚠️ **Requires subtitles ON, in the language of the audio** (Hindi audio →
+  Hindi subtitles)
+- ⚠️ Can miss profanity when the subtitle text ≠ spoken audio (censored subs,
+  dubbed mismatch, ad-libs, unsubtitled songs)
+
+A full breakdown of the matching layers, timing logic, and the **roadmap to
+sound-based (ASR / keyword-spotting) detection** is in
+**[ALGORITHM.md](ALGORITHM.md)**.
+
 ## 🔑 How It Works
 
 ### Subtitle DOM Observer (all platforms)
