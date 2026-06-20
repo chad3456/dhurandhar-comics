@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Crime &amp; Punishment — A Dostoevsky Experience</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=Crimson+Text:ital@0;1&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+  <div id="game-canvas"></div>
+  <div id="crosshair" class="hidden"></div>
+
+  <!-- Loading -->
+  <div id="loading">
+    <div class="l-title">Crime &amp; Punishment</div>
+    <div class="l-sub">A Dostoevsky Experience</div>
+    <div class="l-bar-wrap"><div id="loading-bar"></div></div>
+  </div>
+
+  <!-- Main menu -->
+  <div id="menu" class="overlay hidden ui-blocker">
+    <div class="m-title">Crime &amp; Punishment</div>
+    <div class="m-sub">St. Petersburg, 1866</div>
+    <button class="btn" id="btn-start">Start Game</button>
+    <button class="btn" id="btn-chapters">Chapter Select</button>
+    <button class="btn" id="btn-about">About</button>
+  </div>
+
+  <!-- Chapter select -->
+  <div id="chapter-select" class="overlay hidden ui-blocker">
+    <div class="panel-title">Select a Chapter</div>
+    <div id="cs-grid"></div>
+    <button class="btn" id="cs-close">Back</button>
+  </div>
+
+  <!-- About -->
+  <div id="about" class="overlay hidden ui-blocker">
+    <div class="panel-title">About</div>
+    <div class="about-body">
+      <p>An atmospheric narrative adventure through Fyodor Dostoevsky's <em>Crime and Punishment</em>.</p>
+      <p>You walk as Rodion Raskolnikov through six chapters — from his coffin-like garret to the Haymarket where he kneels at last.</p>
+      <p><strong>Controls:</strong> WASD move · Mouse look · Click / E interact · I inventory · ESC menu</p>
+    </div>
+    <button class="btn" id="about-close">Back</button>
+  </div>
+
+  <!-- Chapter card -->
+  <div id="chapter-card" class="hidden"></div>
+
+  <!-- HUD -->
+  <div id="hud" class="hidden">
+    <div id="hud-location"></div>
+    <div id="hud-dots"></div>
+    <div id="hud-hint"></div>
+  </div>
+
+  <div id="tooltip" class="hidden"></div>
+  <div id="minimap" class="hidden"></div>
+  <div id="inventory" class="hidden"></div>
+  <div id="toast"></div>
+
+  <!-- Dialogue -->
+  <div id="dialogue" class="hidden ui-blocker">
+    <div id="dialogue-name"></div>
+    <div id="dialogue-text"></div>
+    <button id="dialogue-next">Next</button>
+    <div style="clear:both"></div>
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+  <script src="js/world.js"></script>
+  <script src="js/locations.js"></script>
+  <script src="js/characters.js"></script>
+  <script src="js/story.js"></script>
+  <script src="js/ui.js"></script>
+  <script>
+    // Inline init
+    window.addEventListener('load', function () {
+      var world = new GameWorld();
+      world.init();
+      UI.init();
+      Story.init(world);
+      // reveal minimap once a chapter starts via updateHUD; show crosshair
+      var oldHUD = UI.updateHUD.bind(UI);
+      UI.updateHUD = function (s) {
+        document.getElementById('minimap').classList.remove('hidden');
+        document.getElementById('crosshair').classList.remove('hidden');
+        oldHUD(s);
+      };
+      UI.runLoading(function () {
+        UI.showMenu();
+      });
+    });
+  </script>
+</body>
+</html>
